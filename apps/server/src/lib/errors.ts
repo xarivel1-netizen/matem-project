@@ -15,8 +15,13 @@ export class AppError extends Error {
 
 export const notFound = (message: string): AppError => new AppError(404, 'NOT_FOUND', message);
 
+export interface ErrorHandlerOptions {
+  /** true — отдавать index.html на неизвестные не-API GET (SPA в проде). */
+  spa?: boolean;
+}
+
 /** Единый обработчик ошибок: всегда отдаёт { error: { code, message } }. */
-export function registerErrorHandler(app: FastifyInstance): void {
+export function registerErrorHandler(app: FastifyInstance, opts: ErrorHandlerOptions = {}): void {
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof AppError) {
       reply.code(err.statusCode).send({ error: { code: err.code, message: err.message } });
@@ -39,6 +44,16 @@ export function registerErrorHandler(app: FastifyInstance): void {
   });
 
   app.setNotFoundHandler((req, reply) => {
+    // В проде фронт — SPA: любой неизвестный не-API GET отдаём как index.html,
+    // клиентский роутер сам разберётся с путём.
+    if (
+      opts.spa &&
+      req.method === 'GET' &&
+      !req.url.startsWith('/api') &&
+      !req.url.startsWith('/health')
+    ) {
+      return reply.sendFile('index.html');
+    }
     reply
       .code(404)
       .send({ error: { code: 'NOT_FOUND', message: `Маршрут не найден: ${req.method} ${req.url}` } });

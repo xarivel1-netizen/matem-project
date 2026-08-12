@@ -1,0 +1,35 @@
+# Render Blueprint — деплой Matem.Project одним Node-сервисом.
+# Сервер (Fastify) отдаёт и API (/api/*), и собранный фронт (apps/web/dist),
+# поэтому фронт и бэк живут на одном origin — CORS не нужен, /api работает как есть.
+#
+# Как применить: на render.com → New → Blueprint → указать этот репозиторий.
+# Render прочитает этот файл и создаст сервис.
+services:
+  - type: web
+    name: matem-project
+    runtime: node
+    plan: free
+    region: frankfurt
+    # --prod=false — ставим и devDependencies (vite/tailwind нужны для сборки фронта),
+    # даже если Render выставит NODE_ENV=production.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @matem/web build
+    # pnpm --filter запускает скрипт с cwd = apps/server, поэтому ./drizzle, ./data
+    # и поиск plan-source.md вверх по дереву работают корректно.
+    startCommand: pnpm --filter @matem/server start:prod
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+    # ── Постоянное хранилище (по желанию, требует платный план) ──────────────
+    # На free-плане диск эфемерный: при рестарте/редеплое БД пересобирается из
+    # plan-source.md, а отметки дней/правки теории сбрасываются. Чтобы прогресс
+    # переживал рестарты — раскомментируй блок disk и переменную MATEM_DB_PATH:
+    #
+    #   - key: MATEM_DB_PATH
+    #     value: /var/data/matem.db
+    #
+    # disk:
+    #   name: matem-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
