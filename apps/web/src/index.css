@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- CSS-переменные тем (значения из DESIGN.md) ---- */
+:root {
+  /* безопасные зоны (нотч, домашний индикатор) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Светлая тема */
+  --c-bg-screen: #f2f2f7;
+  --c-card: #ffffff;
+  --c-elevated: #ffffff;
+  --c-separator: rgba(60, 60, 67, 0.29);
+  --c-navbar: rgba(242, 242, 247, 0.72);
+  --c-label: #000000;
+  --c-label-2: rgba(60, 60, 67, 0.6);
+  --c-label-3: rgba(60, 60, 67, 0.3);
+
+  /* Акценты — одинаковы в обеих темах */
+  --c-accent: #5e5ce6;
+  --c-accent-soft: rgba(94, 92, 230, 0.14);
+  --c-success: #30d158;
+  --c-error: #ff453a;
+  --c-warning: #ff9f0a;
+}
+
+.dark {
+  --c-bg-screen: #000000;
+  --c-card: #1c1c1e;
+  --c-elevated: #2c2c2e;
+  --c-separator: rgba(84, 84, 88, 0.65);
+  --c-navbar: rgba(0, 0, 0, 0.72);
+  --c-label: #ffffff;
+  --c-label-2: rgba(235, 235, 245, 0.6);
+  /* третичный в тёмной DESIGN.md не задаёт явно — берём 0.30 по аналогии со светлой */
+  --c-label-3: rgba(235, 235, 245, 0.3);
+  --c-accent-soft: rgba(94, 92, 230, 0.24);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--c-bg-screen);
+  color: var(--c-label);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter Variable', Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Видимый фокус с клавиатуры — кольцо индиго (DESIGN.md «Качество») */
+:where(button, a, [role='button'], [tabindex]):focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Числа прогресса/статистики не должны прыгать при анимации */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Рендер markdown-конспекта ---- */
+.md-body {
+  color: var(--c-label);
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: -0.2px;
+}
+.md-body > *:first-child {
+  margin-top: 0;
+}
+.md-body > *:last-child {
+  margin-bottom: 0;
+}
+.md-body h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 1em 0 0.4em;
+}
+.md-body h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 1em 0 0.4em;
+}
+.md-body h3 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0.9em 0 0.3em;
+}
+.md-body p {
+  margin: 0.6em 0;
+}
+.md-body ul,
+.md-body ol {
+  margin: 0.6em 0;
+  padding-left: 1.4em;
+}
+.md-body ul {
+  list-style: disc;
+}
+.md-body ol {
+  list-style: decimal;
+}
+.md-body li {
+  margin: 0.25em 0;
+}
+.md-body a {
+  color: var(--c-accent);
+}
+.md-body strong {
+  font-weight: 600;
+}
+.md-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--c-label) 8%, transparent);
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+}
+.md-body blockquote {
+  margin: 0.6em 0;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--c-separator);
+  color: var(--c-label-2);
+}
+/* Блочная формула: горизонтальный скролл внутри карточки, не ломает вёрстку */
+.md-body .katex-display {
+  margin: 0.7em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 2px;
+}
+/* Таблицы: скролл по горизонтали на узких экранах, аккуратные разделители */
+.md-body table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 0.7em 0;
+  font-size: 15px;
+}
+.md-body th,
+.md-body td {
+  border: 1px solid var(--c-separator);
+  padding: 5px 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+.md-body th {
+  font-weight: 600;
+  background: color-mix(in srgb, var(--c-label) 5%, transparent);
+}
+.md-body .katex {
+  color: var(--c-label);
+}
