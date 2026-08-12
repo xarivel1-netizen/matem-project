@@ -37,7 +37,12 @@ export function AppShell() {
         <AnimatePresence initial={false}>
         <motion.div
           key={location.pathname}
-          className="absolute inset-0"
+          // bg-screen — непрозрачный слой: въезжающий экран полностью перекрывает
+          //   уходящий, без просвечивания по бокам (было «наслоение»).
+          // transform-gpu + willChange — свой композиторный слой: слайд едет на GPU
+          //   как дешёвая композиция, а не пере-растеризация тяжёлого дерева каждый кадр.
+          className="absolute inset-0 bg-screen transform-gpu"
+          style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
           variants={variants}
           initial="initial"
           animate="animate"
