@@ -10,9 +10,11 @@ services:
     runtime: node
     plan: free
     region: frankfurt
+    # pnpm ставим через npm напрямую: corepack в Node 20.18 падает на проверке
+    # подписи (устаревшие ключи → "Cannot find matching keyid").
     # --prod=false — ставим и devDependencies (vite/tailwind нужны для сборки фронта),
     # даже если Render выставит NODE_ENV=production.
-    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @matem/web build
+    buildCommand: npm i -g pnpm@9.7.0 && pnpm install --frozen-lockfile --prod=false && pnpm --filter @matem/web build
     # pnpm --filter запускает скрипт с cwd = apps/server, поэтому ./drizzle, ./data
     # и поиск plan-source.md вверх по дереву работают корректно.
     startCommand: pnpm --filter @matem/server start:prod
