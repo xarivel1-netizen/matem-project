@@ -1,4 +1,5 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Icon, Sidebar, TabBar, type TabItem } from '../components/ui';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
@@ -20,34 +21,66 @@ const TABS: TabItem[] = [
   { to: '/progress', label: 'Прогресс', icon: <Icon.ChartBar /> },
 ];
 
+/** Тип перехода: смена вкладок — кроссфейд; заход/выход вглубь — слайд. */
+type NavKind = 'tab' | 'push' | 'pop';
+
+/** Глубина маршрута по числу сегментов: /plan → 1, /theory/5 → 2. */
+const depth = (path: string): number => path.split('/').filter(Boolean).length;
+
+// Кроссфейд (вкладки) и слайд (push/pop) в одном наборе. Направление берётся из
+// custom (kind), поэтому и уходящий экран анимируется в нужную сторону — «назад»
+// уезжает вправо, а не влево. animate общий: приходим в нейтраль.
+const variants: Variants = {
+  initial: (k: NavKind) =>
+    k === 'tab' ? { opacity: 0 } : k === 'pop' ? { x: '-25%', opacity: 0.5 } : { x: '100%' },
+  animate: { x: 0, opacity: 1 },
+  exit: (k: NavKind) =>
+    k === 'tab' ? { opacity: 0 } : k === 'pop' ? { x: '100%' } : { x: '-25%', opacity: 0.5 },
+};
+
 export function AppShell() {
   const location = useLocation();
   const reduced = usePrefersReducedMotion();
 
-  // Push-навигация из DESIGN.md: новый экран въезжает справа, старый уходит влево.
-  const variants = reduced
-    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
-    : { initial: { x: '100%' }, animate: { x: 0 }, exit: { x: '-25%', opacity: 0.5 } };
+  // Определяем тип перехода по прошлому и текущему маршруту.
+  const prevPath = useRef(location.pathname);
+  const from = prevPath.current;
+  const to = location.pathname;
+  const df = depth(from);
+  const dt = depth(to);
+  let kind: NavKind;
+  if (reduced || (df <= 1 && dt <= 1)) kind = 'tab'; // между вкладками (или reduced-motion) — кроссфейд
+  else if (dt > df) kind = 'push'; // вглубь — въезд справа
+  else if (dt < df) kind = 'pop'; // назад — уезд вправо
+  else kind = 'push'; // одинаковая глубина >1 — как push
+  useEffect(() => {
+    prevPath.current = location.pathname;
+  }, [location.pathname]);
+
+  // Кроссфейд — короткий tween; слайд — пружина из DESIGN.md.
+  const transition =
+    kind === 'tab' ? { duration: 0.2, ease: [0.4, 0, 0.2, 1] as const } : springs.screen;
 
   return (
     // Телефон: полный экран + нижний таб-бар. ПК: боковое меню + контент на всю ширину.
     <div className="flex h-dvh w-full bg-screen">
       <Sidebar items={TABS} />
       <div className="relative flex-1 overflow-hidden">
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} custom={kind}>
         <motion.div
           key={location.pathname}
+          custom={kind}
           // bg-screen — непрозрачный слой: въезжающий экран полностью перекрывает
           //   уходящий, без просвечивания по бокам (было «наслоение»).
-          // transform-gpu + willChange — свой композиторный слой: слайд едет на GPU
+          // transform-gpu + willChange — свой композиторный слой: анимация едет на GPU
           //   как дешёвая композиция, а не пере-растеризация тяжёлого дерева каждый кадр.
           className="absolute inset-0 bg-screen transform-gpu"
-          style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+          style={{ willChange: 'transform, opacity', backfaceVisibility: 'hidden' }}
           variants={variants}
           initial="initial"
           animate="animate"
           exit="exit"
-          transition={springs.screen}
+          transition={transition}
         >
           <Routes location={location}>
             <Route path="/" element={<Navigate to="/plan" replace />} />
