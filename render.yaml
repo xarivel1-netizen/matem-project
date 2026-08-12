@@ -15,9 +15,11 @@ services:
     # --prod=false — ставим и devDependencies (vite/tailwind нужны для сборки фронта),
     # даже если Render выставит NODE_ENV=production.
     buildCommand: npm i -g pnpm@9.7.0 && pnpm install --frozen-lockfile --prod=false && pnpm --filter @matem/web build
-    # pnpm --filter запускает скрипт с cwd = apps/server, поэтому ./drizzle, ./data
-    # и поиск plan-source.md вверх по дереву работают корректно.
-    startCommand: pnpm --filter @matem/server start:prod
+    # Запускаем node напрямую (tsx как loader), без обёртки pnpm — тогда node сам
+    # получает SIGTERM при засыпании/редеплое и выходит чисто, без ложной ошибки
+    # ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL. cd apps/server — чтобы ./drizzle, ./data
+    # и поиск plan-source.md вверх по дереву работали.
+    startCommand: cd apps/server && node --import tsx src/index.ts
     healthCheckPath: /health
     autoDeploy: true
     envVars:
